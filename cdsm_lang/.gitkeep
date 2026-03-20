@@ -1,0 +1,60 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+// Main Module
+$lang['cdsm_title'] = 'Customer Document Management';
+$lang['cdsm_documents'] = 'Documents';
+$lang['cdsm_reminders'] = 'Reminders';
+$lang['cdsm_settings'] = 'Settings';
+
+// Document Management
+$lang['cdsm_add_document'] = 'Add Document';
+$lang['cdsm_edit_document'] = 'Edit Document';
+$lang['cdsm_view_document'] = 'View Document';
+$lang['cdsm_my_documents'] = 'My Documents';
+$lang['cdsm_document_added'] = 'Document added successfully';
+$lang['cdsm_document_updated'] = 'Document updated successfully';
+$lang['cdsm_document_deleted'] = 'Document deleted successfully';
+$lang['cdsm_document_add_failed'] = 'Failed to add document';
+$lang['cdsm_document_delete_failed'] = 'Failed to delete document';
+
+// Fields
+$lang['cdsm_customer'] = 'Customer';
+$lang['cdsm_document_name'] = 'Document Name';
+$lang['cdsm_document_type'] = 'Document Type';
+$lang['cdsm_issue_date'] = 'Issue Date';
+$lang['cdsm_expiry_date'] = 'Expiry Date';
+$lang['cdsm_notes'] = 'Notes';
+$lang['cdsm_status'] = 'Status';
+$lang['cdsm_days_left'] = 'Days Left';
+$lang['cdsm_file'] = 'Document File';
+
+// Status Labels
+$lang['cdsm_status_valid'] = 'Valid';
+$lang['cdsm_status_follow_up'] = 'Follow Up';
+$lang['cdsm_status_expiring_soon'] = 'Expiring Soon';
+$lang['cdsm_status_nearly_expiring'] = 'Nearly Expiring';
+$lang['cdsm_status_expired'] = 'Expired';
+
+// Reminders
+$lang['cdsm_reminder_30_days'] = 'Remind 30 days before expiry';
+$lang['cdsm_reminder_15_days'] = 'Remind 15 days before expiry';
+$lang['cdsm_reminder_7_days'] = 'Remind 7 days before expiry';
+$lang['cdsm_enable_email_reminders'] = 'Enable Email Reminders';
+$lang['cdsm_settings_updated'] = 'Settings updated successfully';
+
+// Dashboard
+$lang['cdsm_total_documents'] = 'Total Documents';
+$lang['cdsm_valid_documents'] = 'Valid Documents';
+$lang['cdsm_expiring_soon'] = 'Expiring Soon';
+$lang['cdsm_expired_documents'] = 'Expired Documents';
+$lang['cdsm_pending_reminders'] = 'Pending Reminders';
+$lang['cdsm_no_reminders'] = 'No Pending Reminders';
+$lang['cdsm_mark_as_done'] = 'Mark as Done';
+$lang['cdsm_mark_as_notified'] = 'Mark as Notified';
+
+// Messages
+$lang['cdsm_reminder_sent'] = 'Reminder notification sent successfully';
+$lang['cdsm_no_data'] = 'No documents found';
+
+?>
