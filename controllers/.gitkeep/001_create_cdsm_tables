@@ -1,0 +1,109 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Migration_001_create_cdsm_tables extends CI_Migration
+{
+    public function up()
+    {
+        // Create documents table
+        $this->dbforge->add_field(array(
+            'id' => array(
+                'type' => 'INT',
+                'constraint' => 11,
+                'unsigned' => TRUE,
+                'auto_increment' => TRUE
+            ),
+            'customer_id' => array(
+                'type' => 'INT',
+                'constraint' => 11,
+                'unsigned' => TRUE
+            ),
+            'document_name' => array(
+                'type' => 'VARCHAR',
+                'constraint' => 255
+            ),
+            'document_type' => array(
+                'type' => 'VARCHAR',
+                'constraint' => 100
+            ),
+            'file_path' => array(
+                'type' => 'VARCHAR',
+                'constraint' => 500,
+                'null' => TRUE
+            ),
+            'issue_date' => array(
+                'type' => 'DATE'
+            ),
+            'expiry_date' => array(
+                'type' => 'DATE'
+            ),
+            'notes' => array(
+                'type' => 'TEXT',
+                'null' => TRUE
+            ),
+            'created_by' => array(
+                'type' => 'INT',
+                'constraint' => 11,
+                'unsigned' => TRUE
+            ),
+            'created_at' => array(
+                'type' => 'DATETIME'
+            ),
+            'updated_at' => array(
+                'type' => 'DATETIME',
+                'null' => TRUE
+            )
+        ));
+
+        $this->dbforge->add_key('id', TRUE);
+        $this->dbforge->add_key('customer_id');
+        $this->dbforge->add_key('expiry_date');
+        $this->dbforge->create_table('tblcdsm_documents');
+
+        // Create reminders table
+        $this->dbforge->add_field(array(
+            'id' => array(
+                'type' => 'INT',
+                'constraint' => 11,
+                'unsigned' => TRUE,
+                'auto_increment' => TRUE
+            ),
+            'document_id' => array(
+                'type' => 'INT',
+                'constraint' => 11,
+                'unsigned' => TRUE
+            ),
+            'reminder_days' => array(
+                'type' => 'INT',
+                'constraint' => 3
+            ),
+            'reminder_date' => array(
+                'type' => 'DATE'
+            ),
+            'is_notified' => array(
+                'type' => 'TINYINT',
+                'constraint' => 1,
+                'default' => 0
+            ),
+            'notified_at' => array(
+                'type' => 'DATETIME',
+                'null' => TRUE
+            ),
+            'created_at' => array(
+                'type' => 'DATETIME'
+            )
+        ));
+
+        $this->dbforge->add_key('id', TRUE);
+        $this->dbforge->add_key('document_id');
+        $this->dbforge->add_key('reminder_date');
+        $this->dbforge->create_table('tblcdsm_reminders');
+    }
+
+    public function down()
+    {
+        $this->dbforge->drop_table('tblcdsm_reminders');
+        $this->dbforge->drop_table('tblcdsm_documents');
+    }
+}
+?>
