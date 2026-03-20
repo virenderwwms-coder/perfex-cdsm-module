@@ -1,0 +1,81 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * Add CDSM menu items and initialize module
+ */
+add_action('admin_init', function() {
+    $CI = &get_instance();
+    $CI->load->model('cdsm_model');
+    
+    // Add menu items - already done in module main class
+});
+
+/**
+ * Add CDSM CSS and JS to admin pages
+ */
+add_action('app_admin_head', function() {
+    $url = modules_url('cdsm/assets/css/cdsm.css');
+    echo '<link rel="stylesheet" href="' . $url . '">' . "\n";
+});
+
+add_action('app_admin_footer', function() {
+    $url = modules_url('cdsm/assets/js/cdsm.js');
+    echo '<script src="' . $url . '"></script>' . "\n";
+});
+
+/**
+ * Add staff reminders to dashboard
+ */
+add_action('admin_dashboard_head', function() {
+    $CI = &get_instance();
+    
+    if (has_permission('cdsm', '', 'view')) {
+        $CI->load->model('cdsm_reminders_model');
+        $pending_count = $CI->db->where('is_notified', 0)
+                                ->where('reminder_date <=', date('Y-m-d'))
+                                ->count_all_results('tblcdsm_reminders');
+
+        if ($pending_count > 0) {
+            echo '
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fa fa-bell"></i> 
+                <strong>' . $pending_count . ' Document Reminders Pending</strong>
+                <a href="' . admin_url('cdsm/reminders') . '" class="btn btn-sm btn-warning ml-2">View Reminders</a>
+                <button type="button" class="close" data-dismiss="alert">×</button>
+            </div>
+            ';
+        }
+    }
+});
+
+/**
+ * Check and create reminders when viewing customer
+ */
+add_action('app_customer_profile_content_before', function($customer_id) {
+    $CI = &get_instance();
+    $CI->load->model('cdsm_documents_model');
+    
+    if (has_permission('cdsm', '', 'view')) {
+        $documents = $CI->cdsm_documents_model->get_customer_documents($customer_id);
+        
+        if (!empty($documents)) {
+            echo '
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fa fa-file-text"></i> Documents
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <a href="' . admin_url('cdsm') . '" class="btn btn-sm btn-primary">
+                        View Documents (' . count($documents) . ')
+                    </a>
+                </div>
+            </div>
+            ';
+        }
+    }
+});
+
+?>
