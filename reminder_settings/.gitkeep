@@ -1,0 +1,106 @@
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+
+<div class="container-fluid cdsm-container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h4 class="card-title"><?php echo $title; ?></h4>
+                </div>
+                <div class="card-body">
+                    <?php echo form_open(current_url(), array('class' => 'form-horizontal')); ?>
+                    
+                    <h5 class="mb-3">Reminder Intervals Configuration</h5>
+                    <p class="text-muted">Configure when staff should be reminded about expiring documents</p>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-md-4 col-form-label">
+                            <i class="fa fa-calendar"></i> First Reminder (Days before expiry)
+                        </label>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="number" name="reminder_30_days" class="form-control" value="30" min="1" max="365">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="form-text text-muted">First notification will be sent this many days before expiry</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-md-4 col-form-label">
+                            <i class="fa fa-calendar"></i> Second Reminder (Days before expiry)
+                        </label>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="number" name="reminder_15_days" class="form-control" value="15" min="1" max="365">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="form-text text-muted">Second notification will be sent this many days before expiry</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-md-4 col-form-label">
+                            <i class="fa fa-calendar"></i> Final Reminder (Days before expiry)
+                        </label>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="number" name="reminder_7_days" class="form-control" value="7" min="1" max="365">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="form-text text-muted">Final notification will be sent this many days before expiry</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3">Email Notifications</h5>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-md-4 col-form-label">Enable Email Reminders</label>
+                        <div class="col-md-8">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="enable_email_reminders" name="enable_email_reminders" value="1" 
+                                    <?php echo (get_option('cdsm_enable_email_reminders') == 1) ? 'checked' : ''; ?>>
+                                <label class="custom-control-label" for="enable_email_reminders">
+                                    Send email notifications to staff about expiring documents
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                When enabled, staff members with permission will receive email notifications at each reminder interval
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3">Cron Job Configuration</h5>
+                    <div class="alert alert-info">
+                        <strong>To enable automated reminders, add this to your server's crontab:</strong>
+                        <pre>0 */2 * * * /usr/bin/php <?php echo BASEPATH . '../index.php'; ?> cdsm process_reminders > /dev/null 2>&1</pre>
+                        <p class="mt-2 mb-0"><small>This will process reminders every 2 hours. Adjust the timing as needed.</small></p>
+                    </div>
+
+                    <hr>
+
+                    <div class="form-group row">
+                        <div class="col-md-8 offset-md-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Save Settings
+                            </button>
+                            <a href="<?php echo admin_url('cdsm'); ?>" class="btn btn-secondary">
+                                <i class="fa fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+
+                    <?php echo form_close(); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    <?php $this->load->view('cdsm/assets/js/cdsm'); ?>
+</script>
