@@ -1,0 +1,163 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Cdsm_email_helper
+{
+    private $CI;
+
+    public function __construct()
+    {
+        $this->CI = &get_instance();
+        $this->CI->load->library('email');
+        $this->CI->load->model('staff_model');
+    }
+
+    /**
+     * Send reminder email to staff
+     */
+    public function send_reminder_email($reminder, $days_left)
+    {
+        if (!get_option('cdsm_enable_email_reminders')) {
+            return false;
+        }
+
+        $staff = $this->CI->staff_model->get();
+        $email_body = $this->_build_reminder_email($reminder, $days_left);
+
+        foreach ($staff as $staff_member) {
+            if (has_permission('cdsm', '', 'view', $staff_member->staffid)) {
+                $this->CI->email->clear();
+                $this->CI->email->to($staff_member->email);
+                $this->CI->email->subject('Document Expiry Reminder - ' . $reminder->document_name);
+                $this->CI->email->message($email_body);
+                
+                if (!$this->CI->email->send()) {
+                    log_message('error', 'Failed to send reminder email: ' . $this->CI->email->print_debugger());
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Send bulk reminder emails
+     */
+    public function send_bulk_reminders($reminders, $interval_days)
+    {
+        foreach ($reminders as $reminder) {
+            $this->send_reminder_email($reminder, $interval_days);
+        }
+    }
+
+    /**
+     * Build HTML email body
+     */
+    private function _build_reminder_email($reminder, $days_left)
+    {
+        $html = '
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                <h2 style="color: #333; margin-top: 0;">Document Expiry Reminder</h2>
+                
+                <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #007bff; margin-top: 0;">Action Required</h3>
+                    
+                    <p><strong>Document:</strong> ' . htmlspecialchars($reminder->document_name) . '</p>
+                    <p><strong>Customer:</strong> ' . htmlspecialchars($reminder->customer_name) . '</p>
+                    <p><strong>Expiry Date:</strong> ' . _d($reminder->expiry_date) . '</p>
+                    <p><strong>Days Until Expiry:</strong> 
+                        <span style="background-color: ' . $this->_get_status_color($days_left) . '; color: white; padding: 5px 10px; border-radius: 3px;">
+                            ' . $days_left . ' days
+                        </span>
+                    </p>
+                    
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Please follow up with the customer before this document expires. Ensure they renew or update their documentation as needed.
+                    </p>
+                    
+                    <a href="' . admin_url('cdsm') . '" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                        View Document
+                    </a>
+                </div>
+                
+                <div style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+                    <p>This is an automated notification from Customer Document Management System</p>
+                </div>
+            </div>
+        </div>
+        ';
+
+        return $html;
+    }
+
+    /**
+     * Get color based on days left
+     */
+    private function _get_status_color($days_left)
+    {
+        if ($days_left <= 0) {
+            return '#8b0000'; // Dark red - Expired
+        } elseif ($days_left <= 7) {
+            return '#dc3545'; // Red - Critical
+        } elseif ($days_left <= 15) {
+            return '#fd7e14'; // Orange - Warning
+        } else {
+            return '#ffc107'; // Yellow - Follow-up
+        }
+    }
+
+    /**
+     * Send customer notification
+     */
+    public function send_customer_notification($reminder)
+    {
+        $customer_email = $reminder->customer_email;
+        
+        if (empty($customer_email)) {
+            return false;
+        }
+
+        $html_body = '
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                <h2 style="color: #333; margin-top: 0;">Document Expiry Notice</h2>
+                
+                <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                    <p>Dear Valued Customer,</p>
+                    
+                    <p>This is a reminder that your document <strong>"' . htmlspecialchars($reminder->document_name) . '"</strong> is set to expire on <strong>' . _d($reminder->expiry_date) . '</strong>.</p>
+                    
+                    <p>Please renew or update your documentation before the expiration date to avoid any service interruptions.</p>
+                    
+                    <p>If you have any questions or need assistance, please contact our service team.</p>
+                    
+                    <p>
+                        <strong>Company Name</strong><br>
+                        Contact: ' . get_option('companyphone') . '<br>
+                        Email: ' . get_option('companyemail') . '
+                    </p>
+                </div>
+                
+                <div style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+                    <p>This is an automated notification. Please do not reply to this email.</p>
+                </div>
+            </div>
+        </div>
+        ';
+
+        $this->CI->email->clear();
+        $this->CI->email->to($customer_email);
+        $this->CI->email->subject('Document Expiry Reminder - ' . $reminder->document_name);
+        $this->CI->email->message($html_body);
+
+        if (!$this->CI->email->send()) {
+            log_message('error', 'Failed to send customer notification: ' . $this->CI->email->print_debugger());
+            return false;
+        }
+
+        return true;
+    }
+}
+?>
