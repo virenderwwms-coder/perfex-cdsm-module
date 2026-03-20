@@ -1,0 +1,12 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+$config['name']              = 'Customer Document Management';
+$config['version']           = '1.0.0';
+$config['author']            = 'Your Company';
+$config['author_url']        = '#';
+$config['module_url']        = '#';
+$config['description']       = 'Manage customer documents with expiry tracking, automated reminders, and status monitoring. Track document expiry and remind staff before expiration at 30, 15, and 7 days intervals.';
+$config['module_icon']       = 'fa fa-file-text';
+$config['install_demo_data'] = false;
+?>
