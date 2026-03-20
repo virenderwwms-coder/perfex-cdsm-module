@@ -1,1 +1,206 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
 
+class Cdsm extends AdminController
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('cdsm_model');
+        $this->load->model('cdsm_documents_model');
+        $this->load->model('cdsm_reminders_model');
+        
+        if (!has_permission('cdsm', '', 'view')) {
+            access_denied('cdsm');
+        }
+    }
+
+    /**
+     * Display all documents
+     */
+    public function index()
+    {
+        $data['title'] = _l('cdsm_documents');
+        $data['documents'] = $this->cdsm_documents_model->get_all_documents();
+        $this->load->view('admin/manage_documents', $data);
+    }
+
+    /**
+     * Add new document
+     */
+    public function add_document()
+    {
+        if ($this->input->post()) {
+            if (!has_permission('cdsm', '', 'create')) {
+                access_denied('cdsm');
+            }
+            
+            $this->load->library('upload');
+            $document_data = $this->_prepare_document_data();
+            $insert_id = $this->cdsm_documents_model->add_document($document_data);
+            
+            if ($insert_id) {
+                set_alert('success', _l('cdsm_document_added'));
+                redirect(admin_url('cdsm'));
+            } else {
+                set_alert('danger', _l('cdsm_document_add_failed'));
+            }
+        }
+
+        $data['title'] = _l('cdsm_add_document');
+        $data['customers'] = $this->cdsm_model->get_all_customers();
+        $data['document_types'] = $this->cdsm_model->get_document_types();
+        $this->load->view('admin/add_edit_document', $data);
+    }
+
+    /**
+     * Edit document
+     */
+    public function edit_document($id)
+    {
+        if (!$id) {
+            redirect(admin_url('cdsm'));
+        }
+
+        $document = $this->cdsm_documents_model->get_document($id);
+        
+        if (!$document) {
+            show_404();
+        }
+
+        if ($this->input->post()) {
+            if (!has_permission('cdsm', '', 'edit')) {
+                access_denied('cdsm');
+            }
+
+            $document_data = $this->_prepare_document_data();
+            $this->cdsm_documents_model->update_document($id, $document_data);
+            set_alert('success', _l('cdsm_document_updated'));
+            redirect(admin_url('cdsm'));
+        }
+
+        $data['title'] = _l('cdsm_edit_document');
+        $data['document'] = $document;
+        $data['customers'] = $this->cdsm_model->get_all_customers();
+        $data['document_types'] = $this->cdsm_model->get_document_types();
+        $this->load->view('admin/add_edit_document', $data);
+    }
+
+    /**
+     * View document details
+     */
+    public function view_document($id)
+    {
+        if (!$id) {
+            redirect(admin_url('cdsm'));
+        }
+
+        $document = $this->cdsm_documents_model->get_document($id);
+        
+        if (!$document) {
+            show_404();
+        }
+
+        $data['title'] = _l('cdsm_view_document');
+        $data['document'] = $document;
+        $data['reminders'] = $this->cdsm_reminders_model->get_document_reminders($id);
+        $this->load->view('admin/document_details', $data);
+    }
+
+    /**
+     * Delete document
+     */
+    public function delete_document($id)
+    {
+        if (!has_permission('cdsm', '', 'delete')) {
+            access_denied('cdsm');
+        }
+
+        if ($this->cdsm_documents_model->delete_document($id)) {
+            set_alert('success', _l('cdsm_document_deleted'));
+        } else {
+            set_alert('danger', _l('cdsm_document_delete_failed'));
+        }
+        
+        redirect(admin_url('cdsm'));
+    }
+
+    /**
+     * Display reminders dashboard
+     */
+    public function reminders()
+    {
+        $data['title'] = _l('cdsm_reminders');
+        
+        // Get reminders by status
+        $data['reminders_30_days'] = $this->cdsm_reminders_model->get_reminders_by_days(30);
+        $data['reminders_15_days'] = $this->cdsm_reminders_model->get_reminders_by_days(15);
+        $data['reminders_7_days'] = $this->cdsm_reminders_model->get_reminders_by_days(7);
+        $data['expired_reminders'] = $this->cdsm_reminders_model->get_expired_reminders();
+        
+        $data['all_reminders'] = $this->cdsm_reminders_model->get_all_reminders();
+        
+        $this->load->view('admin/reminders_dashboard', $data);
+    }
+
+    /**
+     * Settings
+     */
+    public function settings()
+    {
+        if ($this->input->post()) {
+            if (!has_permission('cdsm', '', 'edit')) {
+                access_denied('cdsm');
+            }
+
+            $settings = array(
+                'cdsm_reminder_30_days' => $this->input->post('reminder_30_days'),
+                'cdsm_reminder_15_days' => $this->input->post('reminder_15_days'),
+                'cdsm_reminder_7_days' => $this->input->post('reminder_7_days'),
+                'cdsm_enable_email_reminders' => $this->input->post('enable_email_reminders'),
+            );
+
+            foreach ($settings as $key => $value) {
+                update_option($key, $value);
+            }
+
+            set_alert('success', _l('cdsm_settings_updated'));
+            redirect(admin_url('cdsm/settings'));
+        }
+
+        $data['title'] = _l('cdsm_settings');
+        $this->load->view('admin/reminder_settings', $data);
+    }
+
+    /**
+     * Mark reminder as notified
+     */
+    public function mark_reminder_notified($reminder_id)
+    {
+        if ($this->cdsm_reminders_model->mark_as_notified($reminder_id)) {
+            echo json_encode(array('success' => true));
+        } else {
+            echo json_encode(array('success' => false));
+        }
+    }
+
+    /**
+     * Prepare document data for insert/update
+     */
+    private function _prepare_document_data()
+    {
+        $data = array(
+            'customer_id' => $this->input->post('customer_id'),
+            'document_name' => $this->input->post('document_name'),
+            'document_type' => $this->input->post('document_type'),
+            'issue_date' => $this->input->post('issue_date'),
+            'expiry_date' => $this->input->post('expiry_date'),
+            'notes' => $this->input->post('notes'),
+            'created_by' => get_staff_user_id(),
+            'created_at' => date('Y-m-d H:i:s'),
+        );
+
+        return $data;
+    }
+}
+?>
