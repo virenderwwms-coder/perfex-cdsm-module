@@ -1,0 +1,106 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Cdsm_reminders_model extends CI_Model
+{
+    private $reminders_table = 'tblcdsm_reminders';
+    private $documents_table = 'tblcdsm_documents';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Get all reminders
+     */
+    public function get_all_reminders()
+    {
+        $this->db->select('r.*, d.document_name, d.expiry_date, c.company as customer_name');
+        $this->db->from($this->reminders_table . ' r');
+        $this->db->join($this->documents_table . ' d', 'd.id = r.document_id', 'left');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->order_by('r.reminder_date', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    /**
+     * Get reminders by days
+     */
+    public function get_reminders_by_days($days)
+    {
+        $today = date('Y-m-d');
+
+        $this->db->select('r.*, d.document_name, d.expiry_date, c.company as customer_name');
+        $this->db->from($this->reminders_table . ' r');
+        $this->db->join($this->documents_table . ' d', 'd.id = r.document_id', 'left');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        
+        if ($days == 0) {
+            $this->db->where('r.reminder_date <=', $today);
+            $this->db->where('d.expiry_date <', $today);
+        } else {
+            $this->db->where('r.reminder_days', $days);
+            $this->db->where('r.reminder_date', $today);
+        }
+        
+        $this->db->where('r.is_notified', 0);
+        $this->db->order_by('r.reminder_date', 'ASC');
+
+        return $this->db->get()->result();
+    }
+
+    /**
+     * Get expired reminders
+     */
+    public function get_expired_reminders()
+    {
+        $today = date('Y-m-d');
+
+        $this->db->select('r.*, d.document_name, d.expiry_date, c.company as customer_name');
+        $this->db->from($this->reminders_table . ' r');
+        $this->db->join($this->documents_table . ' d', 'd.id = r.document_id', 'left');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->where('d.expiry_date <', $today);
+        $this->db->order_by('r.reminder_date', 'DESC');
+
+        return $this->db->get()->result();
+    }
+
+    /**
+     * Get document reminders
+     */
+    public function get_document_reminders($document_id)
+    {
+        $this->db->where('document_id', $document_id);
+        $this->db->order_by('reminder_days', 'ASC');
+        return $this->db->get($this->reminders_table)->result();
+    }
+
+    /**
+     * Mark reminder as notified
+     */
+    public function mark_as_notified($reminder_id)
+    {
+        $this->db->where('id', $reminder_id);
+        $this->db->update($this->reminders_table, array('is_notified' => 1, 'notified_at' => date('Y-m-d H:i:s')));
+        return true;
+    }
+
+    /**
+     * Get pending reminders (not yet notified)
+     */
+    public function get_pending_reminders()
+    {
+        $this->db->select('r.*, d.document_name, d.expiry_date, c.company as customer_name, c.email');
+        $this->db->from($this->reminders_table . ' r');
+        $this->db->join($this->documents_table . ' d', 'd.id = r.document_id', 'left');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->where('r.is_notified', 0);
+        $this->db->where('r.reminder_date <=', date('Y-m-d'));
+        $this->db->order_by('r.reminder_date', 'ASC');
+
+        return $this->db->get()->result();
+    }
+}
+?>
