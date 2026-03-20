@@ -1,0 +1,93 @@
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+
+<div class="container-fluid cdsm-container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h4 class="card-title"><?php echo _l('cdsm_documents'); ?></h4>
+                    <div class="card-tools">
+                        <?php if (has_permission('cdsm', '', 'create')) { ?>
+                            <a href="<?php echo admin_url('cdsm/add_document'); ?>" class="btn btn-sm btn-primary">
+                                <i class="fa fa-plus"></i> <?php echo _l('cdsm_add_document'); ?>
+                            </a>
+                        <?php } ?>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($documents)) { ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover cdsm-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th><?php echo _l('cdsm_customer'); ?></th>
+                                        <th><?php echo _l('cdsm_document_name'); ?></th>
+                                        <th><?php echo _l('cdsm_document_type'); ?></th>
+                                        <th><?php echo _l('cdsm_issue_date'); ?></th>
+                                        <th><?php echo _l('cdsm_expiry_date'); ?></th>
+                                        <th><?php echo _l('cdsm_days_left'); ?></th>
+                                        <th><?php echo _l('cdsm_status'); ?></th>
+                                        <th><?php echo _l('actions'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($documents as $key => $doc) { 
+                                        $this->load->model('cdsm_documents_model');
+                                        $status_info = $this->cdsm_documents_model->get_document_status($doc);
+                                    ?>
+                                        <tr>
+                                            <td><?php echo $key + 1; ?></td>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($doc->customer_name); ?></strong>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($doc->document_name); ?></td>
+                                            <td><span class="badge badge-secondary"><?php echo htmlspecialchars($doc->document_type); ?></span></td>
+                                            <td><?php echo _d($doc->issue_date); ?></td>
+                                            <td><?php echo _d($doc->expiry_date); ?></td>
+                                            <td>
+                                                <span class="cdsm-days-counter" style="background-color: <?php echo $status_info['color']; ?>; color: white;">
+                                                    <?php echo $status_info['days']; ?> days
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="cdsm-status-badge" data-status="<?php echo $status_info['status']; ?>">
+                                                    <?php echo ucfirst(str_replace('_', ' ', $status_info['status'])); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="<?php echo admin_url('cdsm/view_document/' . $doc->id); ?>" class="btn btn-sm btn-info" title="<?php echo _l('cdsm_view_document'); ?>">
+                                                        <i class="fa fa-eye"></i>
+                                                    </a>
+                                                    <?php if (has_permission('cdsm', '', 'edit')) { ?>
+                                                        <a href="<?php echo admin_url('cdsm/edit_document/' . $doc->id); ?>" class="btn btn-sm btn-warning" title="<?php echo _l('edit'); ?>">
+                                                            <i class="fa fa-edit"></i>
+                                                        </a>
+                                                    <?php } ?>
+                                                    <?php if (has_permission('cdsm', '', 'delete')) { ?>
+                                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteDocument(<?php echo $doc->id; ?>)" title="<?php echo _l('delete'); ?>">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    <?php } ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php } else { ?>
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> <?php echo _l('no_data'); ?>
+                        </div>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    <?php $this->load->view('cdsm/assets/js/cdsm'); ?>
+</script>
