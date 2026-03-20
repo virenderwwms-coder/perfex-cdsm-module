@@ -1,0 +1,117 @@
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+
+<div class="container-fluid cdsm-container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h4 class="card-title"><?php echo htmlspecialchars($document->document_name); ?></h4>
+                </div>
+                <div class="card-body">
+                    <?php 
+                        $this->load->model('cdsm_documents_model');
+                        $status_info = $this->cdsm_documents_model->get_document_status($document);
+                    ?>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_customer'); ?></h6>
+                            <p><strong><?php echo htmlspecialchars($document->customer_name); ?></strong></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_status'); ?></h6>
+                            <p>
+                                <span class="cdsm-status-badge" data-status="<?php echo $status_info['status']; ?>">
+                                    <?php echo ucfirst(str_replace('_', ' ', $status_info['status'])); ?>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_document_type'); ?></h6>
+                            <p><?php echo htmlspecialchars($document->document_type); ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_days_left'); ?></h6>
+                            <p>
+                                <span class="cdsm-days-counter" style="background-color: <?php echo $status_info['color']; ?>; color: white;">
+                                    <?php echo $status_info['days']; ?> days
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_issue_date'); ?></h6>
+                            <p><?php echo _d($document->issue_date); ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><?php echo _l('cdsm_expiry_date'); ?></h6>
+                            <p><?php echo _d($document->expiry_date); ?></p>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($document->notes)) { ?>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6 class="text-muted"><?php echo _l('cdsm_notes'); ?></h6>
+                                <p><?php echo nl2br(htmlspecialchars($document->notes)); ?></p>
+                            </div>
+                        </div>
+                    <?php } ?>
+
+                    <hr>
+                    <div class="form-group">
+                        <?php if (has_permission('cdsm', '', 'edit')) { ?>
+                            <a href="<?php echo admin_url('cdsm/edit_document/' . $document->id); ?>" class="btn btn-warning">
+                                <i class="fa fa-edit"></i> <?php echo _l('edit'); ?>
+                            </a>
+                        <?php } ?>
+                        <a href="<?php echo admin_url('cdsm'); ?>" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left"></i> <?php echo _l('back'); ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title"><?php echo _l('cdsm_reminders'); ?></h5>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($reminders)) { ?>
+                        <?php foreach ($reminders as $reminder) { ?>
+                            <div class="cdsm-reminder-card <?php echo ($reminder->reminder_days <= 7) ? 'critical' : ($reminder->reminder_days <= 15 ? 'warning' : ''); ?>">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong><?php echo $reminder->reminder_days; ?> days before</strong>
+                                        <br>
+                                        <small class="text-muted">Reminder Date: <?php echo _d($reminder->reminder_date); ?></small>
+                                    </div>
+                                    <div>
+                                        <?php if ($reminder->is_notified) { ?>
+                                            <span class="badge badge-success">Notified</span>
+                                        <?php } else { ?>
+                                            <span class="badge badge-warning">Pending</span>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php } ?>
+                    <?php } else { ?>
+                        <p class="text-muted">No reminders set</p>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    <?php $this->load->view('cdsm/assets/js/cdsm'); ?>
+</script>
