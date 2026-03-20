@@ -1,0 +1,41 @@
+// CDSM Module JavaScript
+
+(function() {
+    'use strict';
+
+    // Mark reminder as notified
+    window.markReminderNotified = function(reminderId) {
+        $.ajax({
+            url: admin_url + 'cdsm/mark_reminder_notified/' + reminderId,
+            type: 'POST',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Reminder marked as notified');
+                    location.reload();
+                } else {
+                    toastr.error('Failed to mark reminder');
+                }
+            },
+            error: function() {
+                toastr.error('Error processing reminder');
+            }
+        });
+    };
+
+    // Delete document with confirmation
+    window.deleteDocument = function(documentId) {
+        if (confirm('Are you sure you want to delete this document?')) {
+            window.location.href = admin_url + 'cdsm/delete_document/' + documentId;
+        }
+    };
+
+    // Color code status badges
+    $(document).ready(function() {
+        $('.cdsm-status-badge').each(function() {
+            var status = $(this).data('status');
+            $(this).addClass('cdsm-status-' + status);
+        });
+    });
+
+})();
