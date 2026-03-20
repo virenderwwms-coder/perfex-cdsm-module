@@ -1,0 +1,196 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Cdsm_documents_model extends CI_Model
+{
+    private $table = 'tblcdsm_documents';
+    private $reminders_table = 'tblcdsm_reminders';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Get all documents
+     */
+    public function get_all_documents()
+    {
+        $this->db->select('d.*, c.company as customer_name');
+        $this->db->from($this->table . ' d');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->order_by('d.created_at', 'DESC');
+        return $this->db->get()->result();
+    }
+
+    /**
+     * Get single document
+     */
+    public function get_document($id)
+    {
+        $this->db->select('d.*, c.company as customer_name, c.email as customer_email');
+        $this->db->from($this->table . ' d');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->where('d.id', $id);
+        return $this->db->get()->row();
+    }
+
+    /**
+     * Get documents by customer
+     */
+    public function get_customer_documents($customer_id)
+    {
+        $this->db->where('customer_id', $customer_id);
+        $this->db->order_by('expiry_date', 'ASC');
+        return $this->db->get($this->table)->result();
+    }
+
+    /**
+     * Get document status
+     */
+    public function get_document_status($document)
+    {
+        $today = strtotime(date('Y-m-d'));
+        $expiry = strtotime($document->expiry_date);
+        $days_left = floor(($expiry - $today) / (60 * 60 * 24));
+
+        if ($days_left < 0) {
+            return array('status' => 'expired', 'color' => 'red', 'days' => $days_left);
+        } elseif ($days_left <= 7) {
+            return array('status' => 'nearly_expiring', 'color' => 'red', 'days' => $days_left);
+        } elseif ($days_left <= 15) {
+            return array('status' => 'expiring_soon', 'color' => 'yellow', 'days' => $days_left);
+        } elseif ($days_left <= 30) {
+            return array('status' => 'follow_up', 'color' => 'orange', 'days' => $days_left);
+        } else {
+            return array('status' => 'valid', 'color' => 'green', 'days' => $days_left);
+        }
+    }
+
+    /**
+     * Add new document
+     */
+    public function add_document($data)
+    {
+        $insert_data = array(
+            'customer_id' => $data['customer_id'],
+            'document_name' => $data['document_name'],
+            'document_type' => $data['document_type'],
+            'issue_date' => $data['issue_date'],
+            'expiry_date' => $data['expiry_date'],
+            'notes' => $data['notes'],
+            'created_by' => $data['created_by'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        );
+
+        $this->db->insert($this->table, $insert_data);
+        $insert_id = $this->db->insert_id();
+
+        // Create reminders
+        if ($insert_id) {
+            $this->_create_reminders($insert_id, $data['expiry_date']);
+        }
+
+        return $insert_id;
+    }
+
+    /**
+     * Update document
+     */
+    public function update_document($id, $data)
+    {
+        $update_data = array(
+            'customer_id' => $data['customer_id'],
+            'document_name' => $data['document_name'],
+            'document_type' => $data['document_type'],
+            'issue_date' => $data['issue_date'],
+            'expiry_date' => $data['expiry_date'],
+            'notes' => $data['notes'],
+            'updated_at' => date('Y-m-d H:i:s'),
+        );
+
+        $this->db->where('id', $id);
+        $this->db->update($this->table, $update_data);
+
+        // Update reminders
+        $this->db->where('document_id', $id);
+        $this->db->delete($this->reminders_table);
+        $this->_create_reminders($id, $data['expiry_date']);
+
+        return true;
+    }
+
+    /**
+     * Delete document
+     */
+    public function delete_document($id)
+    {
+        $this->db->where('id', $id);
+        $this->db->delete($this->table);
+
+        // Delete associated reminders
+        $this->db->where('document_id', $id);
+        $this->db->delete($this->reminders_table);
+
+        return true;
+    }
+
+    /**
+     * Create reminders for document
+     */
+    private function _create_reminders($document_id, $expiry_date)
+    {
+        $reminders = array(30, 15, 7, 0);
+        $expiry_timestamp = strtotime($expiry_date);
+
+        foreach ($reminders as $days) {
+            $reminder_date = date('Y-m-d', $expiry_timestamp - ($days * 24 * 60 * 60));
+            
+            $reminder_data = array(
+                'document_id' => $document_id,
+                'reminder_days' => $days,
+                'reminder_date' => $reminder_date,
+                'is_notified' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            );
+
+            $this->db->insert($this->reminders_table, $reminder_data);
+        }
+    }
+
+    /**
+     * Get documents expiring soon (within 30 days)
+     */
+    public function get_expiring_soon()
+    {
+        $thirty_days = date('Y-m-d', strtotime('+30 days'));
+        $today = date('Y-m-d');
+
+        $this->db->select('d.*, c.company as customer_name');
+        $this->db->from($this->table . ' d');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->where('d.expiry_date <=', $thirty_days);
+        $this->db->where('d.expiry_date >=', $today);
+        $this->db->order_by('d.expiry_date', 'ASC');
+
+        return $this->db->get()->result();
+    }
+
+    /**
+     * Get expired documents
+     */
+    public function get_expired_documents()
+    {
+        $today = date('Y-m-d');
+
+        $this->db->select('d.*, c.company as customer_name');
+        $this->db->from($this->table . ' d');
+        $this->db->join('tblclients c', 'c.userid = d.customer_id', 'left');
+        $this->db->where('d.expiry_date <', $today);
+        $this->db->order_by('d.expiry_date', 'DESC');
+
+        return $this->db->get()->result();
+    }
+}
+?>
